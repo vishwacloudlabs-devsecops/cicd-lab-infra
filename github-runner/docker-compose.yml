@@ -1,0 +1,26 @@
+# Self-hosted GitHub Actions runner as a container.
+#
+#   cp .env.example .env     # then fill in REPO_URL and RUNNER_TOKEN
+#   sudo mkdir -p /opt/gha-runner/_work && sudo chown -R 1000:1000 /opt/gha-runner
+#   docker compose up -d --build
+#   docker compose logs -f   # look for "Listening for Jobs"
+services:
+  runner:
+    build: .
+    image: course/github-runner:latest
+    container_name: gha-runner-1
+    restart: unless-stopped
+    env_file: .env
+    group_add:
+      - "${DOCKER_GID}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Same path on host and in the container so `docker run -v $PWD:...` works
+      - /opt/gha-runner/_work:/opt/gha-runner/_work
+      # Keeps the registration across container restarts
+      - runner-config:/home/runner/actions-runner/config
+
+volumes:
+  runner-config:

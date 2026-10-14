@@ -1,0 +1,52 @@
+# Jenkins lab environment: one controller + build agents, all as containers.
+#
+#   ./setup.sh                      # one-time: creates folders and .env
+#   docker compose up -d --build    # controller + SSH agent
+#   docker compose --profile inbound up -d   # also start the inbound (JNLP) agent (Day 8)
+#
+# Docker-outside-of-Docker: containers use the HOST's Docker through
+# /var/run/docker.sock. Workspaces are bind-mounted at the SAME path on the
+# host and inside the container, so `docker run -v $WORKSPACE:...` works.
+services:
+  jenkins:
+    build: ./controller
+    image: course/jenkins-controller:lts
+    container_name: jenkins
+    restart: unless-stopped
+    ports:
+      - "8080:8080"     # web UI
+      - "50000:50000"   # inbound agents
+    group_add:
+      - "${DOCKER_GID}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  agent-1:
+    build: ./agent
+    image: course/jenkins-agent:latest
+    container_name: jenkins-agent-1
+    restart: unless-stopped
+    environment:
+      JENKINS_AGENT_SSH_PUBKEY: "${JENKINS_AGENT_SSH_PUBKEY}"
+      DOCKER_GID: "${DOCKER_GID}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /opt/jenkins-agent:/opt/jenkins-agent
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  agent-inbound:
+    profiles: ["inbound"]
+    image: jenkins/inbound-agent:latest-jdk21
+    container_name: jenkins-agent-inbound
+    restart: unless-stopped
+    environment:
+      JENKINS_URL: http://jenkins:8080
+      JENKINS_AGENT_NAME: inbound-agent-1
+      JENKINS_SECRET: "${JENKINS_INBOUND_SECRET}"
+      JENKINS_AGENT_WORKDIR: /home/jenkins/agent
+    depends_on:
+      - jenkins

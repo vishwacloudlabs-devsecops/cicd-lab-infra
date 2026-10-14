@@ -1,0 +1,35 @@
+# Plugins pre-installed in the course Jenkins image (latest compatible versions).
+# Pipeline
+workflow-aggregator
+pipeline-stage-view
+pipeline-graph-view
+pipeline-utility-steps
+pipeline-github-lib
+# Source control
+git
+github
+github-branch-source
+# Agents & Docker
+ssh-slaves
+docker-workflow
+# Credentials & security
+credentials-binding
+ssh-credentials
+aws-credentials
+role-strategy
+matrix-auth
+# Build, test & reports
+junit
+coverage
+htmlpublisher
+sonar
+# Job options
+timestamper
+ws-cleanup
+build-timeout
+# Administration
+configuration-as-code
+thinBackup
+# Notifications
+mailer
+email-ext
