@@ -1,0 +1,14 @@
+// Optional: requires a configured Kubernetes cloud and Kubernetes plugin.
+pipeline {
+    agent {
+        kubernetes {
+            yamlFile 'starter-repos/cicd-lab-infra/examples/kubernetes/agent-pod.yaml'
+            defaultContainer 'python'
+        }
+    }
+    stages {
+        stage('Agent check') {
+            steps { sh 'id && python3 --version' }
+        }
+    }
+}

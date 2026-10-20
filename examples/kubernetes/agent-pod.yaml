@@ -1,0 +1,26 @@
+# Reference only. The plugin adds the jnlp agent container automatically.
+# Pin reviewed image digests before operational use; no Docker socket is mounted.
+apiVersion: v1
+kind: Pod
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: python
+      image: python:3.12-slim
+      command: [sleep]
+      args: [99d]
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: '1'
+          memory: 1Gi

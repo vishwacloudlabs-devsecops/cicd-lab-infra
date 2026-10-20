@@ -1,0 +1,51 @@
+# Reference only - NOT used in the course labs (they run on one Ubuntu VM).
+#
+# A pod template for the Jenkins Kubernetes plugin. Each build gets its own pod;
+# the plugin adds the "jnlp" agent container automatically and deletes the pod
+# when the build ends. Images are built without a Docker daemon and without root
+# by rootless BuildKit (Kaniko was archived by Google in 2025).
+#
+# Use it in a Jenkinsfile:
+#
+#   pipeline {
+#     agent { kubernetes { yamlFile 'k8s-pod-template.yaml' } }
+#     stages {
+#       stage('Test')  { steps { container('python')   { sh 'pip install -r requirements-dev.txt && pytest' } } }
+#       stage('Image') { steps { container('buildkit') { sh '''
+#           buildctl-daemonless.sh build --frontend dockerfile.v0 \
+#             --local context=. --local dockerfile=. \
+#             --output type=image,name=registry.example.com/visitor-counter:${BUILD_NUMBER},push=true
+#       ''' } } }
+#     }
+#   }
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: jenkins-build
+spec:
+  securityContext:
+    runAsNonRoot: true
+  containers:
+    - name: python
+      image: python:3.12-slim
+      command: ["sleep", "infinity"]
+      securityContext:
+        runAsUser: 1000
+      resources:
+        requests: { cpu: "250m", memory: "256Mi" }
+        limits:   { cpu: "1",    memory: "1Gi" }
+    - name: buildkit
+      image: moby/buildkit:rootless
+      command: ["sleep", "infinity"]
+      env:
+        - name: BUILDKITD_FLAGS
+          value: --oci-worker-no-process-sandbox
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: { type: Unconfined }
+        appArmorProfile: { type: Unconfined }
+      resources:
+        requests: { cpu: "500m", memory: "512Mi" }
+        limits:   { cpu: "2",    memory: "2Gi" }
